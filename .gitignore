@@ -3,3 +3,4 @@ venv/
 configs/ 
 data/
 lvenv/
+.env

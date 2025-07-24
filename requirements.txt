@@ -16,3 +16,6 @@ langgraph
 wikipedia
 docling 
 langchain-docling    
+streamlit
+langchain-chroma
+langchain-huggingface

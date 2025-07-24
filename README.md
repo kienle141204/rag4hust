@@ -26,14 +26,4 @@ Dự án này là một chatbot thông minh dựa trên kỹ thuật **RAG (Retr
 
 ---
 
-## ▶️ Hướng dẫn chạy
-
-### 1. Cài đặt môi trường
-
-```bash
-python -m venv venv
-source venv/bin/activate     # Linux/macOS
-venv\Scripts\activate        # Windows
-pip install -r requirements.txt
-```
 

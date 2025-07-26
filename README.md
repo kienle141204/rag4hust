@@ -20,7 +20,6 @@ Dự án này là một chatbot thông minh dựa trên kỹ thuật **RAG (Retr
 - **LangChain** – framework hỗ trợ xây dựng pipeline RAG.
 - **ChromaDB** – lưu trữ vector embedding và truy xuất.
 - **SentenceTransformer / HuggingFace Embeddings** – tạo embedding cho văn bản.
-- **Underthesea** – tokenizer cho tiếng Việt.
 - **LLM** – có thể dùng `gemma`,, v.v.
 - **Streamlit / Gradio / Flask** – giao diện người dùng (tùy chọn).
 

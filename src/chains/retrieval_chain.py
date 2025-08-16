@@ -59,6 +59,8 @@ class RetrievalChain:
 
         reranked_docs = self.reciprocal_rank_fusion(results)
         doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:3]]
+        # doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:1]]
+
         docs = [self.retriever.docstore.mget([doc_id])[0].page_content for doc_id in doc_ids]
         
         answer = self.genarate_answer_chain.invoke({"context": docs, "question": question})

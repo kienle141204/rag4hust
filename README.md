@@ -1,5 +1,7 @@
 # rag4hust
 
+## Tài liệu dự án được lấy từ "SỔ TAY SINH VIÊN" của Đại Học Bách khoa Hà Nội 
+
 ## 📚 Chatbot RAG - Retrieval-Augmented Generation Chatbot
 
 Dự án này là một chatbot thông minh dựa trên kỹ thuật **RAG (Retrieval-Augmented Generation)**, kết hợp giữa mô hình ngôn ngữ lớn (LLM) và các tài liệu được lưu trữ để trả lời các câu hỏi chính xác và bám sát ngữ cảnh.

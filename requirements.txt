@@ -19,3 +19,5 @@ langchain-docling
 streamlit
 langchain-chroma
 langchain-huggingface
+fastapi
+uvicorn[standard]

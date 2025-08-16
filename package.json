@@ -1,0 +1,13 @@
+{
+  "name": "rag4hust-chatbot",
+  "version": "1.0.0",
+  "description": "A chatbot application with RAG for HUST",
+  "scripts": {
+    "dev": "concurrently \"python backend_main.py\" \"cd frontend && npm run dev\"",
+    "backend": "python backend_main.py",
+    "frontend": "cd frontend && npm run dev"
+  },
+  "dependencies": {
+    "concurrently": "^7.6.0"
+  }
+}

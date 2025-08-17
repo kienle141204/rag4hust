@@ -21,3 +21,6 @@ langchain-chroma
 langchain-huggingface
 fastapi
 uvicorn[standard]
+selenium 
+python-docx
+beautifulsoup4

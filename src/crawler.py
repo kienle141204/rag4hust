@@ -2,11 +2,12 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from docx import Document
+from langchain.schema import Document as LCDocumnet 
 import time
 import re
 from datetime import datetime
 
-class SimpleCrawler:
+class WebCrawler:
     def __init__(self, headless=True, delay=2):
         """
         Args:
@@ -129,7 +130,7 @@ class SimpleCrawler:
         try:
             doc = Document()
             doc.add_paragraph(content)
-            doc.save(filename)
+            # doc.save(filename)
             return True
         except Exception as e:
             print(f"Lỗi khi lưu file {filename}: {e}")
@@ -168,11 +169,12 @@ class SimpleCrawler:
                 filename = self._create_filename()
                 success = self._save_to_docx(content, filename)
 
-                result = {
-                    "url": url,
-                    "filename": filename,
-                    "success": success
-                }
+                result = LCDocumnet(
+                    page_content=content,
+                    metadata={
+                        "source": url
+                    }
+                )
                 results.append(result)
                 
                 if success:
@@ -188,8 +190,7 @@ class SimpleCrawler:
         
         finally:
             self._close_driver()
-            
-        print(f"\nHoàn thành! Crawl thành công {sum(1 for r in results if r['success'])}/{len(urls)} trang")
+            print("Đã hoàn thành crawl.")
         return results
 
 # Ví dụ sử dụng
@@ -202,7 +203,7 @@ if __name__ == "__main__":
     ]
     
     # Tạo crawler và chạy
-    crawler = SimpleCrawler(headless=True, delay=3)
+    crawler = WebCrawler(headless=True, delay=3)
     results = crawler.run(urls)
     
     # In kết quả

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Send, HelpCircle, Search, Zap, FileText, BookOpen } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
@@ -9,6 +9,7 @@ import remarkGfm from 'remark-gfm';
 const ChatPage = () => {
   const { conversationId, spaceId } = useParams();
   const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
   
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -20,6 +21,17 @@ const ChatPage = () => {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentSpace, setCurrentSpace] = useState(null);
   const [spaceDocuments, setSpaceDocuments] = useState([]);
+
+  // Auto scroll to bottom when new messages are added
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (hasStartedChat) {
+      scrollToBottom();
+    }
+  }, [messages, loading, hasStartedChat]);
 
   // Load conversation và messages khi component mount
   useEffect(() => {
@@ -214,13 +226,18 @@ const ChatPage = () => {
   const CodeBlock = ({ node, inline, className, children, ...props }) => {
     const match = /language-(\w+)/.exec(className || '');
     return !inline && match ? (
-      <pre className="bg-gray-800 rounded-lg p-4 overflow-x-auto my-2">
-        <code className={`language-${match[1]}`} {...props}>
-          {children}
-        </code>
-      </pre>
+      <div className="my-4">
+        <div className="bg-gray-900/90 backdrop-blur-sm rounded-t-xl px-4 py-2 border-b border-gray-600/50">
+          <span className="text-xs font-medium text-gray-300 uppercase tracking-wider">{match[1]}</span>
+        </div>
+        <pre className="bg-gray-900/50 rounded-b-xl p-4 overflow-x-auto border border-t-0 border-gray-600/50">
+          <code className={`language-${match[1]} text-sm`} {...props}>
+            {children}
+          </code>
+        </pre>
+      </div>
     ) : (
-      <code className="bg-gray-700 rounded px-1 py-0.5" {...props}>
+      <code className="bg-gray-700/70 text-blue-300 rounded-md px-2 py-1 text-sm font-mono" {...props}>
         {children}
       </code>
     );
@@ -230,24 +247,50 @@ const ChatPage = () => {
   const SourceDocuments = ({ sources }) => {
     if (!sources || sources.length === 0) return null;
 
+    // Hàm kiểm tra xem một chuỗi có phải là URL hợp lệ không
+    const isValidUrl = (string) => {
+      try {
+        new URL(string);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    };
+
     return (
-      <div className="mt-3 pt-3 border-t border-gray-600">
-        <div className="flex items-center text-xs text-gray-400 mb-2">
-          <BookOpen size={12} className="mr-1" />
-          <span>Tài liệu tham khảo:</span>
+      <div className="mt-4 p-4 rounded-2xl bg-gray-800/30 backdrop-blur-sm border border-gray-700/50">
+        <div className="flex items-center text-xs text-gray-300 mb-3 font-medium">
+          <BookOpen size={14} className="mr-2 text-blue-400" />
+          <span>Tài liệu tham khảo</span>
         </div>
-        <div className="space-y-1">
-          {sources.slice(0, 3).map((source, index) => (
-            <div key={index} className="flex items-start text-xs">
-              <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
-                <span className="text-blue-400 text-[8px]">{index + 1}</span>
+        <div className="space-y-2">
+          {sources.slice(0, 3).map((source, index) => {
+            const sourceText = source.title || source.name || `Document ${index + 1}`;
+            const isUrl = isValidUrl(sourceText);
+            
+            return (
+              <div key={index} className="flex items-start text-sm group">
+                <div className="w-6 h-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-blue-500/30 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
+                  <span className="text-blue-400 text-xs font-bold">{index + 1}</span>
+                </div>
+                {isUrl ? (
+                  <a 
+                    href={sourceText} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:text-blue-300 underline decoration-2 underline-offset-2 group-hover:decoration-blue-300 transition-colors flex-1 leading-relaxed"
+                  >
+                    {sourceText}
+                  </a>
+                ) : (
+                  <span className="text-gray-200 flex-1 leading-relaxed">{sourceText}</span>
+                )}
               </div>
-              <span className="text-gray-300">{source.title || source.name || `Document ${index + 1}`}</span>
-            </div>
-          ))}
+            );
+          })}
           {sources.length > 3 && (
-            <div className="text-xs text-gray-500">
-              ... và {sources.length - 3} tài liệu khác
+            <div className="text-xs text-gray-400 italic pl-9">
+              +{sources.length - 3} tài liệu khác
             </div>
           )}
         </div>
@@ -267,23 +310,25 @@ const ChatPage = () => {
       </div>
       
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="h-16 bg-gray-900 border-b border-gray-700 flex items-center justify-between px-6">
+      <div className="flex-1 flex flex-col h-full">
+        {/* Header - Fixed height */}
+        <div className="h-16 bg-gray-900 border-b border-gray-700 flex items-center justify-between px-6 flex-shrink-0">
           <div className="flex items-center">
             <span className="font-medium text-lg">{currentConversation?.title || 'New Chat'}</span>
           </div>
         </div>
 
-        {/* Chat Content */}
-        <div className="flex-1 flex flex-col">
-          {error && (
-            <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 text-center">
-              {error}
-            </div>
-          )}
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-500/20 border border-red-500/50 text-red-300 px-4 py-2 text-center flex-shrink-0">
+            {error}
+          </div>
+        )}
+        
+        {/* Chat Content - Takes remaining space */}
+        <div className="flex-1 min-h-0 flex flex-col">
           {!hasStartedChat ? (
-            /* Welcome Screen */
+            /* Welcome Screen - Centered in available space */
             <div className="flex-1 flex flex-col items-center justify-center p-8">
               <div className="max-w-2xl w-full text-center">
                 {/* Welcome Icon */}
@@ -293,7 +338,7 @@ const ChatPage = () => {
                 
                 {/* Welcome Text */}
                 <h1 className="text-2xl font-semibold mb-6 text-white">
-                  Hi kienle, how are you?
+                  Hi, how are you?
                 </h1>
                 
                 {/* Quick Actions - Subtle */}
@@ -331,121 +376,140 @@ const ChatPage = () => {
               </div>
             </div>
           ) : (
-            /* Chat Messages */
-            <div className="flex-1 overflow-y-auto p-8">
-              <div className="space-y-4 max-w-4xl mx-auto w-full">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    {msg.sender === 'ai' && (
-                      <div className="flex-shrink-0 mr-3 flex items-end">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">🤖</span>
+            /* Chat Messages - Scrollable area with fixed height */
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-8">
+                <div className="space-y-4 max-w-4xl mx-auto w-full">
+                  {messages.map((msg) => (
+                    <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'} mb-6`}>
+                      {msg.sender === 'ai' && (
+                        <div className="flex-shrink-0 mr-4 flex items-start mt-1">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-sm">AI</span>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    <div className={`px-4 py-3 rounded-2xl shadow-sm transition-all duration-200 ${
-                      msg.sender === 'user' 
-                        ? 'bg-blue-600 text-white rounded-tr-none text-right' 
-                        : 'bg-gray-700 text-gray-100 rounded-tl-none text-left'
-                    }`}>
-                      {msg.sender === 'ai' ? (
-                        <>
-                          <ReactMarkdown 
-                            remarkPlugins={[remarkGfm]} 
-                            components={{
-                              code: CodeBlock,
-                              p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
-                              ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3" {...props} />,
-                              ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3" {...props} />,
-                              li: ({node, ...props}) => <li className="mb-1" {...props} />,
-                              h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-3 mt-4" {...props} />,
-                              h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 mt-4" {...props} />,
-                              h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-3 mt-4" {...props} />,
-                              a: ({node, ...props}) => <a className="text-blue-400 hover:underline" {...props} />,
-                              blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-500 pl-4 italic" {...props} />,
-                              table: ({node, ...props}) => <table className="min-w-full border-collapse border border-gray-600 mb-3" {...props} />,
-                              th: ({node, ...props}) => <th className="border border-gray-600 px-3 py-1 bg-gray-800" {...props} />,
-                              td: ({node, ...props}) => <td className="border border-gray-600 px-3 py-1" {...props} />,
-                            }}
-                          >
-                            {msg.content}
-                          </ReactMarkdown>
-                          {msg.sources && msg.sources.length > 0 && (
-                            <SourceDocuments sources={msg.sources} />
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       )}
-                      <p className={`text-xs mt-1 ${
-                        msg.sender === 'user' ? 'text-blue-100' : 'text-gray-400'
-                      }`}>
-                        {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </p>
-                    </div>
-                    {msg.sender === 'user' && (
-                      <div className="flex-shrink-0 ml-3 flex items-end">
-                        <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
-                          <span className="text-white font-bold text-xs">👤</span>
+                      <div className={`relative max-w-[75%] ${msg.sender === 'user' ? 'mr-4' : 'ml-0'}`}>
+                        <div className={`px-5 py-4 rounded-3xl shadow-lg transition-all duration-300 hover:shadow-xl ${
+                          msg.sender === 'user' 
+                            ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white relative overflow-hidden text-right' 
+                            : 'bg-gray-800/80 backdrop-blur-sm text-gray-100 border border-gray-700/50 text-left'
+                        }`}>
+                          {/* Glass effect for user messages */}
+                          {msg.sender === 'user' && (
+                            <div className="absolute inset-0 bg-white/10 backdrop-blur-sm rounded-3xl"></div>
+                          )}
+                          
+                          <div className="relative z-10">
+                            {msg.sender === 'ai' ? (
+                              <>
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm]} 
+                                  components={{
+                                    code: CodeBlock,
+                                    p: ({node, ...props}) => <p className="mb-3 last:mb-0 leading-relaxed" {...props} />,
+                                    ul: ({node, ...props}) => <ul className="list-disc pl-5 mb-3 space-y-1" {...props} />,
+                                    ol: ({node, ...props}) => <ol className="list-decimal pl-5 mb-3 space-y-1" {...props} />,
+                                    li: ({node, ...props}) => <li className="leading-relaxed" {...props} />,
+                                    h1: ({node, ...props}) => <h1 className="text-2xl font-bold mb-3 mt-4 text-white" {...props} />,
+                                    h2: ({node, ...props}) => <h2 className="text-xl font-bold mb-3 mt-4 text-white" {...props} />,
+                                    h3: ({node, ...props}) => <h3 className="text-lg font-bold mb-3 mt-4 text-white" {...props} />,
+                                    a: ({node, ...props}) => <a className="text-blue-400 hover:text-blue-300 underline decoration-2 underline-offset-2" {...props} />,
+                                    blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-4 italic bg-gray-700/50 py-2 rounded-r-lg" {...props} />,
+                                    table: ({node, ...props}) => <table className="min-w-full border-collapse border border-gray-600 mb-3 rounded-lg overflow-hidden" {...props} />,
+                                    th: ({node, ...props}) => <th className="border border-gray-600 px-3 py-2 bg-gray-700 font-semibold" {...props} />,
+                                    td: ({node, ...props}) => <td className="border border-gray-600 px-3 py-2" {...props} />,
+                                  }}
+                                >
+                                  {msg.content}
+                                </ReactMarkdown>
+                                {msg.sources && msg.sources.length > 0 && (
+                                  <SourceDocuments sources={msg.sources} />
+                                )}
+                              </>
+                            ) : (
+                              <p className="text-sm whitespace-pre-wrap leading-relaxed font-medium">{msg.content}</p>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Timestamp */}
+                        <div className={`mt-2 text-xs flex items-center ${msg.sender === 'user' ? 'justify-end text-gray-400' : 'justify-start text-gray-500'}`}>
+                          <span className="px-2 py-1 rounded-full bg-gray-800/50 backdrop-blur-sm">
+                            {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-                {loading && (
-                  <div className="flex justify-start">
-                    <div className="flex-shrink-0 mr-3 flex items-end">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-                        <span className="text-white font-bold text-xs">🤖</span>
+                      
+                      {msg.sender === 'user' && (
+                        <div className="flex-shrink-0 ml-4 flex items-start mt-1">
+                          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg">
+                            <span className="text-white font-bold text-sm">You</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {loading && (
+                    <div className="flex justify-start mb-6">
+                      <div className="flex-shrink-0 mr-4 flex items-start mt-1">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
+                          <span className="text-white font-bold text-sm">AI</span>
+                        </div>
+                      </div>
+                      <div className="bg-gray-800/80 backdrop-blur-sm border border-gray-700/50 px-5 py-4 rounded-3xl shadow-lg max-w-[75%]">
+                        <div className="flex items-center space-x-2">
+                          <div className="flex space-x-1">
+                            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+                            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+                          </div>
+                          <span className="text-gray-400 text-sm">AI đang suy nghĩ...</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="px-4 py-3 rounded-2xl shadow-sm bg-gray-700 text-gray-100 rounded-tl-none">
-                      <div className="flex space-x-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  )}
+                  {/* Invisible element for scrolling to bottom */}
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
             </div>
           )}
-          
-          {/* Input Area */}
-          <div className="p-8 border-t border-gray-700">
-            <div className="max-w-4xl mx-auto">
-              <div className="relative">
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="How can I help you today?"
-                  rows="3"
-                  disabled={loading}
-                  className="w-full bg-gray-800 border border-gray-600 rounded-xl p-4 pr-12 text-white placeholder-gray-400 resize-none focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <button
-                  onClick={handleSend}
-                  disabled={!message.trim() || loading}
-                  className={`absolute right-4 bottom-4 p-2 rounded-lg transition-colors ${
-                    message.trim() && !loading
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                      : 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {loading ? (
-                    <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                  ) : (
-                    <Send size={16} />
-                  )}
-                </button>
-              </div>
-              
-              {/* Helper Text */}
-              <div className="mt-2 text-xs text-gray-500 text-center">
-                Press Enter to send, Shift+Enter for new line
-              </div>
+        </div>
+        
+        {/* Input Area - Fixed at bottom */}
+        <div className="p-8 border-t border-gray-700 flex-shrink-0">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="How can I help you today?"
+                rows="3"
+                disabled={loading}
+                className="w-full bg-gray-800 border border-gray-600 rounded-xl p-4 pr-12 text-white placeholder-gray-400 resize-none focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+              <button
+                onClick={handleSend}
+                disabled={!message.trim() || loading}
+                className={`absolute right-4 bottom-4 p-2 rounded-lg transition-colors ${
+                  message.trim() && !loading
+                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                    : 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Send size={16} />
+                )}
+              </button>
+            </div>
+            
+            {/* Helper Text */}
+            <div className="mt-2 text-xs text-gray-500 text-center">
+              Press Enter to send, Shift+Enter for new line
             </div>
           </div>
         </div>

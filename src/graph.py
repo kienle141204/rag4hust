@@ -15,6 +15,7 @@ class State(TypedDict):
     question: str
     answer: str
     summary: str 
+    source: str | None
 
 class StateGraph(StateGraph[State]):
     def __init__(self, state_type: type[State]):
@@ -69,7 +70,8 @@ class StateGraph(StateGraph[State]):
     def get_answer(self, state: State):
         question = state["question"]
         result = self.qa_chain.run(question)
-        state["answer"] = result
+        state["answer"] = result.answer
+        state["source"] = result.sources if result.sources else None
         return state 
     
     def get_search(self, state: State):

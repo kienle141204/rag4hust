@@ -9,7 +9,8 @@ class Agent():
         state = {
                 "question": "",
                 "answer": "",
-                "summary": ""
+                "summary": "",
+                "source": None
             }
         while True:
             user_input = input("😁  You: ")
@@ -20,7 +21,9 @@ class Agent():
             result = app.invoke(state)
             state["answer"] = result["answer"]
             state["summary"] = result["summary"]
+            state["source"] = result["source"]
             print("🐸  Bot:", result["answer"])
             print("_____________________")
             print(result["summary"])
             print("_____________________")
+            print("Sources:", result["source"] if result["source"] else "No sources available")

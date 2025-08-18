@@ -47,7 +47,7 @@ class VectorStore:
         store = LocalFileStore("data/processed/store/")
         doc_ids = [str(uuid.uuid4()) for _ in docs]
         summaries_docs = [
-            Document(page_content=s, metadata={"doc_id": doc_ids[i]})
+            Document(page_content=s, metadata={"doc_id": doc_ids[i], "source": docs[i].metadata.get("source", "unknown")})
             for i, s in enumerate(summaries)
         ]
 

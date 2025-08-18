@@ -1,21 +1,34 @@
 from typing import List, Any
-from src.utils.llm_model import get_llm
+from src.utils.llm_model import get_llm, get_llm_answer
 from src.chains.genarate_queries_chain import genarate_queries
 from langchain.storage import LocalFileStore
 from langchain.retrievers.multi_vector import MultiVectorRetriever
 from langchain_core.output_parsers import StrOutputParser
-from langchain.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate, ChatPromptTemplate
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.exceptions import OutputParserException
+from pydantic import BaseModel, Field
+
+class OutputSchema(BaseModel):
+    answer: str = Field(..., description="The answer to the question based on the provided context.")
+    sources: List[str] = Field(..., description="List of sources used to generate the answer.")
 
 class RetrievalChain:
     def __init__(self, vectorstore):
         self.vectorstore = vectorstore
         self.llm = get_llm()
+        self.llm_answer = get_llm_answer()
 
-        self.template = """
-        Dựa vào tài liệu sau và hãy trả lời cho câu hỏi dưới đây:
-        Tài liệu: {context}
-        Câu hỏi: {question}
-        """
+        self.template = (
+            "Bạn là trợ lý RAG. Dựa vào tài liệu sau hãy trả lời câu hỏi và liệt kê nguồn."
+            "Tài liệu: {context}"
+            "Nguồn tương ứng: {sources}"
+            "Câu hỏi: {question}"
+            "YÊU CẦU QUAN TRỌNG:"
+            "- Câu trả lời trả về dạng Markdown"
+            " - Chỉ trả về JSON hợp lệ theo đúng schema bên dưới, không thêm bất kỳ chữ nào khác."
+            "{format_instructions}"
+        )
 
         self.genarate_queries_chain = genarate_queries(self.llm)
         self.store = LocalFileStore("data/processed/store/")
@@ -25,11 +38,10 @@ class RetrievalChain:
             byte_store=self.store,
             id_key="doc_id"
         )
-        self.prompt = PromptTemplate(
-            template=self.template,
-            input_variables=["context", "question"]
-        )
-        self.genarate_answer_chain = self.prompt | self.llm | StrOutputParser()
+        self.parser = PydanticOutputParser(pydantic_object=OutputSchema)
+        self.format_instructions = self.parser.get_format_instructions()
+        self.prompt = ChatPromptTemplate.from_template(self.template)
+        self.genarate_answer_chain = self.prompt | self.llm_answer | self.parser
 
     def reciprocal_rank_fusion(self, results: List[List[Any]], k: int = 60):
         fused_scores = {}
@@ -58,11 +70,14 @@ class RetrievalChain:
         results = [retriever.invoke(q) for q in queries]
 
         reranked_docs = self.reciprocal_rank_fusion(results)
-        doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:3]]
+        doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:2]] # thông thường là 3 
         # doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:1]]
 
         docs = [self.retriever.docstore.mget([doc_id])[0].page_content for doc_id in doc_ids]
+        sources = [self.retriever.docstore.mget([doc_id])[0].metadata.get("source", "unknown") for doc_id in doc_ids]
+        # print(sources)
         
-        answer = self.genarate_answer_chain.invoke({"context": docs, "question": question})
+        answer = self.genarate_answer_chain.invoke({"context": docs, "question": question, 
+                                                    "sources": sources, "format_instructions": self.format_instructions})
         
         return answer

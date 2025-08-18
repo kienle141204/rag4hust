@@ -37,7 +37,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     summary: str
-    sources: Optional[List[SourceDocument]] = None
+    sources: List[SourceDocument] = None
     conversation_id: int = None
 
 @app.get("/")
@@ -57,19 +57,21 @@ async def chat(request: ChatRequest):
         # Gọi agent để xử lý câu hỏi
         result = chatbot_app.invoke(state)
         
-        # Tạo mock sources để demo
-        # Trong thực tế, sources này sẽ được lấy từ quá trình truy xuất tài liệu của RAG
-        mock_sources = [
-            SourceDocument(title="Tài liệu 1", name="tailieu1.pdf", score=0.95),
-            SourceDocument(title="Tài liệu 2", name="tailieu2.docx", score=0.87),
-            SourceDocument(title="Tài liệu 3", name="tailieu3.txt", score=0.78)
-        ]
+        # Xử lý sources từ kết quả của agent
+        sources = []
+        if "source" in result and result["source"]:
+            # sources từ agent là một danh sách các string
+            for source in result["source"]:
+                if isinstance(source, str):
+                    sources.append(SourceDocument(
+                        title=source
+                    ))
         
         # Trả về kết quả
         return ChatResponse(
             answer=result["answer"],
             summary=result["summary"],
-            sources=mock_sources,
+            sources=sources,
             conversation_id=request.conversation_id
         )
     except Exception as e:

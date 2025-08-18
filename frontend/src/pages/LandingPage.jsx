@@ -89,9 +89,12 @@ const LandingPage = () => {
           </p>
           
           {/* Description */}
-          <p className="text-lg text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-white/60 max-w-2xl mx-auto leading-relaxed">
             Chatbot thông minh sử dụng công nghệ RAG (Retrieval-Augmented Generation) 
             để cung cấp câu trả lời chính xác và hữu ích cho sinh viên HUST
+          </p>
+          <p className="text-lg text-white/60 mb-8 max-w-2xl leading-relaxed">
+            Tài liệu phục vụ việc trả lời câu hỏi được tham khảo từ mục "Sổ tay sinh viên" của Đại học Bách Khoa Hà Nội
           </p>
 
           {/* CTA Button */}

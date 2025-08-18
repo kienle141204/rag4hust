@@ -9,12 +9,9 @@ if __name__ == "__main__":
     # vectorstore = VectorStore()
     # vectorstore.save(docs)
     # print("Save Completed!!!!!")
-    urls = [
-        "https://sv-ctt.hust.edu.vn/#/so-tay-sv/61/hoc-bong",
-        "https://sv-ctt.hust.edu.vn/#/so-tay-sv/62/huong-dan-ho-so-che-do-chinh-sach-mien-giam-hoc-phi-vay-von-ngan-hang",
-        "https://sv-ctt.hust.edu.vn/#/so-tay-sv/130/huong-dan-viet-email-chuyen-nghiep-danh-cho-sinh-vien",
-    ]
     crawler = WebCrawler(headless=True, delay=3)
+    urls = crawler._collect_urls("https://sv-ctt.hust.edu.vn/#/so-tay-sv")  
+    urls.remove("https://sv-ctt.hust.edu.vn/#/so-tay-sv/69/ban-dao-tao-huong-dan-thu-tuc-bieu-mau-thac-mac-ve-hoc-tap-hoc-phi")
     docs = crawler.run(urls)
     # print(docs)
     vectorstore = VectorStore()

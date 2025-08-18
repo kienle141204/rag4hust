@@ -8,6 +8,13 @@ Dự án này là một chatbot thông minh dựa trên kỹ thuật **RAG (Retr
 
 ---
 
+## Giới thiệu 
+![alt text](image.png)
+
+![alt text](image-1.png)
+
+![alt text](image-2.png)
+
 ## 🧠 Mục tiêu
 
 - Tích hợp LLM để hiểu và sinh ngôn ngữ tự nhiên.

@@ -44,18 +44,22 @@ class ChatResponse(BaseModel):
 async def root():
     return {"message": "RAG4HUST Chatbot API is running!"}
 
+state = {
+            "question": "",
+            "answer": "",
+            "summary": ""
+        }
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     try:
         # Tạo state từ message của người dùng
-        state = {
-            "question": request.message,
-            "answer": "",
-            "summary": ""
-        }
+        state["question"] = request.message
         
         # Gọi agent để xử lý câu hỏi
         result = chatbot_app.invoke(state)
+        state["answer"] = result["answer"]
+        state["summary"] = result["summary"]
         
         # Xử lý sources từ kết quả của agent
         sources = []

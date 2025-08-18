@@ -10,8 +10,9 @@ from langchain_core.exceptions import OutputParserException
 from pydantic import BaseModel, Field
 
 class OutputSchema(BaseModel):
-    answer: str = Field(..., description="The answer to the question based on the provided context.")
-    sources: List[str] = Field(..., description="List of sources used to generate the answer.")
+    answer: str = Field(..., description="Câu trả lời cho câu hỏi.")
+    sources: List[str] = Field(..., description="Tài liệu nguồn được sử dụng để trả lời câu hỏi. " \
+    "Trả về nếu nó thực sự liên quan đến câu trả lời, còn không thì để trống")
 
 class RetrievalChain:
     def __init__(self, vectorstore):
@@ -25,7 +26,7 @@ class RetrievalChain:
             "Nguồn tương ứng: {sources}"
             "Câu hỏi: {question}"
             "YÊU CẦU QUAN TRỌNG:"
-            "- Câu trả lời trả về dạng Markdown"
+            " - Câu trả lời trả về dạng Markdown"
             " - Chỉ trả về JSON hợp lệ theo đúng schema bên dưới, không thêm bất kỳ chữ nào khác."
             "{format_instructions}"
         )
@@ -70,7 +71,7 @@ class RetrievalChain:
         results = [retriever.invoke(q) for q in queries]
 
         reranked_docs = self.reciprocal_rank_fusion(results)
-        doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:2]] # thông thường là 3 
+        doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:3]] # thông thường là 3 
         # doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:1]]
 
         docs = [self.retriever.docstore.mget([doc_id])[0].page_content for doc_id in doc_ids]

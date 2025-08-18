@@ -37,7 +37,7 @@ class VectorStore:
         for doc in docs:
             summary = chain.invoke(doc)
             summaries.append(summary)
-            time.sleep(4)
+            time.sleep(5)
         return summaries
     
     def create_vectorstore(self, docs, summaries):

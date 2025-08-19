@@ -11,7 +11,7 @@ app = FastAPI(title="RAG4HUST Chatbot API")
 # Cấu hình CORS để cho phép frontend truy cập
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # URL của Vite dev server
+    allow_origins=["http://localhost:5173", "https://rag4hust.vercel.app"],  # URL của Vite dev server
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

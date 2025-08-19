@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: rag4hust-backend
+    runtime: docker
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: PYTHONPATH
+        value: /app

@@ -6,6 +6,7 @@
 
 Dự án này là một chatbot thông minh dựa trên kỹ thuật **RAG (Retrieval-Augmented Generation)**, kết hợp giữa mô hình ngôn ngữ lớn (LLM) và các tài liệu được lưu trữ để trả lời các câu hỏi chính xác và bám sát ngữ cảnh.
 
+### Trải nghiệm thử [TẠI ĐÂY](https://rag4hust.vercel.app/)
 ---
 
 ## Giới thiệu 

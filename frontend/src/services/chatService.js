@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://13.215.175.83:8081';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 // Hàm gửi tin nhắn đến backend
 export const sendMessage = async (message, conversationId = null) => {

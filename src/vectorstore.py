@@ -17,10 +17,22 @@ class VectorStore:
 
     def summaries_docs(self, docs):
         template = """
-            Bạn là một chuyên gia tóm tắt văn bản.
-            Hãy tóm tắt văn bản sau và phải giữ lại những ý chính nhất.
-            Giới hạn là 200 tokens.
-            Văn bản: {doc}
+            Bạn là bộ tóm tắt tối ưu cho truy hồi theo độ tương đồng (embedding).
+            Chỉ dùng thông tin có trong văn bản, không suy diễn. Trả về MỘT đoạn văn duy nhất.
+
+            YÊU CẦU TÓM TẮT (≤ 180–220 tokens, tiếng Việt tự nhiên, chèn từ khoá EN/VN khi cần):
+            - NÊU RÕ: chủ đề/chức năng chính; thực thể quan trọng (tên người/tổ chức/sản phẩm/luật); 
+            ràng buộc (điều kiện, tham số, API, công thức); số liệu và mốc thời gian.
+            - GIỮ thuật ngữ then chốt, mở rộng viết tắt: ví dụ “RAG (Retrieval-Augmented Generation)”.
+            - THÊM đồng nghĩa/biến thể phổ biến trong ngoặc: “bảo trì (bảo dưỡng, maintenance)”.
+            - CHUẨN HOÁ đơn vị/số: viết rõ “GB, %, ngày/tháng/năm”.
+            - Nếu là bảng/hướng dẫn: chuyển thành câu liệt kê sự kiện “thực thể–thuộc tính–giá trị”.
+
+            ĐẦU VÀO:{doc}
+
+            ĐẦU RA:
+            - Một đoạn văn ngắn gọn để nhúng (không gạch đầu dòng, không tiền tố, không giải thích).
+            - Không chèn JSON, không thêm chú thích ngoài nội dung.
         """
         prompt = PromptTemplate(
             template=template,

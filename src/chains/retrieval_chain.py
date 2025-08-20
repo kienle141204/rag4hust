@@ -26,10 +26,23 @@ class RetrievalChain:
             "Nguồn tương ứng: {sources}"
             "Câu hỏi: {question}"
             "YÊU CẦU QUAN TRỌNG:"
-            " - Câu trả lời trả về dạng Markdown"
+            " - Trả lời ngắn gọn, súc tích, không dài dòng. Văn chương trang trọng, dễ hiểu."
+            " - Câu trả lời trả về dạng Markdown với các phần rõ ràng"
             " - Chỉ trả về JSON hợp lệ theo đúng schema bên dưới, không thêm bất kỳ chữ nào khác."
+            " - Các nguồn trả về phải có trong phần nguồn tương ứng."
+            " - Nếu tài liệu và nguồn trống thì trả về câu trả lời là không có thông tin và yêu cầu người dùng hỏi rõ ràng hơn."
             "{format_instructions}"
         )
+
+        self.template_select_docid = """
+            Bạn là một trợ lý AI chuyên nghiệp. Nhiệm vụ của bạn là chọn ra các tài liệu phù hợp nhất từ danh sách tài liệu đã cho để trả lời câu hỏi.
+            Dưới đây là danh sách các tài liệu:
+            {context}
+            Dưới đây là câu hỏi:
+            {question}
+            Trả về giá trị cửa trường **doc_id** của tài liệu đó.
+            Lưu ý: chỉ trả về dãy số giá trị của trường **doc_id** của tài liệu phù hợp nhất, không nói gì thêm.
+        """
 
         self.genarate_queries_chain = genarate_queries(self.llm)
         self.store = LocalFileStore("data/processed/store/")
@@ -42,7 +55,9 @@ class RetrievalChain:
         self.parser = PydanticOutputParser(pydantic_object=OutputSchema)
         self.format_instructions = self.parser.get_format_instructions()
         self.prompt = ChatPromptTemplate.from_template(self.template)
+        self.prompt_select_docid = ChatPromptTemplate.from_template(self.template_select_docid)
         self.genarate_answer_chain = self.prompt | self.llm_answer | self.parser
+        self.select_docid_chain = self.prompt_select_docid | self.llm_answer | StrOutputParser()
 
     def reciprocal_rank_fusion(self, results: List[List[Any]], k: int = 60):
         fused_scores = {}
@@ -71,11 +86,18 @@ class RetrievalChain:
         results = [retriever.invoke(q) for q in queries]
 
         reranked_docs = self.reciprocal_rank_fusion(results)
-        doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:3]] # thông thường là 3 
-        # doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:1]]
 
-        docs = [self.retriever.docstore.mget([doc_id])[0].page_content for doc_id in doc_ids]
-        sources = [self.retriever.docstore.mget([doc_id])[0].metadata.get("source", "unknown") for doc_id in doc_ids]
+        doc_id = self.select_docid_chain.invoke({"context": reranked_docs[:7], "question": question})
+        # doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:5]] # thông thường là 3 
+        # doc_ids = [doc.metadata["doc_id"] for doc, _ in reranked_docs[:1]]
+        if doc_id :
+            doc_id = [doc_id] 
+
+            docs = [self.retriever.docstore.mget([doc_id])[0].page_content for doc_id in doc_id]
+            sources = [self.retriever.docstore.mget([doc_id])[0].metadata.get("source", "unknown") for doc_id in doc_id]
+        else:
+            docs = []
+            sources = []
         # print(sources)
         
         answer = self.genarate_answer_chain.invoke({"context": docs, "question": question, 

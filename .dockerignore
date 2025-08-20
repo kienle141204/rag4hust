@@ -14,5 +14,11 @@ Dockerfile
 .env
 .venv
 venv
+venv/
 node_modules
 *.log
+frontend/
+frontend 
+image.png
+image-1.png
+image-2.png
